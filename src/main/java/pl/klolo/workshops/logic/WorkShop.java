@@ -9,6 +9,9 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class WorkShop {
@@ -28,14 +31,18 @@ class WorkShop {
      * Metoda zwraca liczbę holdingów w których jest przynajmniej jedna firma.
      */
     long getHoldingsWhereAreCompanies() {
-        return -1;
+        return holdings.stream()
+                .map(hol -> hol.getCompanies().size() > 1).count();
     }
 
     /**
      * Zwraca nazwy wszystkich holdingów pisane z małej litery w formie listy.
      */
     List<String> getHoldingNames() {
-        return null;
+        return holdings.stream()
+                .map(Holding::getName)
+                .map(String::toLowerCase)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -43,21 +50,33 @@ class WorkShop {
      * String ma postać: (Coca-Cola, Nestle, Pepsico)
      */
     String getHoldingNamesAsString() {
-        return null;
+        String s = holdings.stream()
+                .map(Holding::getName)
+                .sorted()
+                .collect(Collectors.joining(", "));
+        return String.format("(%s)", s);
+        //  return "(" + s + ")";
+
     }
 
     /**
      * Zwraca liczbę firm we wszystkich holdingach.
      */
     long getCompaniesAmount() {
-        return -1;
+        return holdings.stream()
+                .map(Holding::getCompanies)
+                .flatMap(Collection::stream).count();
     }
 
     /**
      * Zwraca liczbę wszystkich pracowników we wszystkich firmach.
      */
     long getAllUserAmount() {
-        return -1;
+        return holdings.stream()
+                .map(Holding::getCompanies)
+                .flatMap(Collection::stream)
+                .map(Company::getUsers)
+                .flatMap(Collection::stream).count();
     }
 
     /**
@@ -65,7 +84,15 @@ class WorkShop {
      * później będziesz wykorzystywać.
      */
     List<String> getAllCompaniesNames() {
-        return null;
+        return getStreamOfCompanies()
+                .map(Company::getName)
+                .collect(Collectors.toList());
+    }
+
+    Stream<Company> getStreamOfCompanies() {
+        return holdings.stream()
+                .map(Holding::getCompanies)
+                .flatMap(Collection::stream);
     }
 
     /**
@@ -73,7 +100,24 @@ class WorkShop {
      * działania strumienia.
      */
     LinkedList<String> getAllCompaniesNamesAsLinkedList() {
-        return null;
+        return holdings.stream()
+                .map(Holding::getCompanies)
+                .flatMap(Collection::stream)
+                .map(Company::getName)
+                .collect(Collector.of(
+//                .collect(Collector.of(
+//                        new Supplier<LinkedList<String>>() {
+//                            @Override
+//                            public LinkedList<String> get() {
+//                                return new LinkedList<>();
+//                            }
+//                        }
+//                        () -> { return new LinkedList<>(); }
+                        LinkedList::new
+                        ,
+                        (list, companyName) -> list.add(companyName),
+                        (list1, list2) -> list1.addAll(list2)
+                ));
     }
 
     /**
